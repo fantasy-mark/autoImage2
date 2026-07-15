@@ -55,6 +55,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .route("/api/image/info", post(handlers::proxy::image_info))
         .route("/api/image/download", post(handlers::proxy::image_download))
+        .route("/api/registry/download", get(handlers::registry::download_image))
         .route("/api/build", post(handlers::build::trigger_build))
         .nest_service("/static", ServeDir::new(&static_dir))
         .layer(TraceLayer::new_for_http())

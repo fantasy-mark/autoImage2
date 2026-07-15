@@ -119,9 +119,96 @@ async function triggerBuild() {
   try {
     const data = await call("POST", "/api/build", { image: image || undefined, version: version || undefined });
     setStatus(`dispatched: ${data.workflow}`, "ok");
+    // remember the build so the user can download it from the registry section
+    if (image && version) {
+      addRecentBuild(image, version);
+      // also pre-fill the download form
+      $("#rd-image").value = image;
+      $("#rd-version").value = version;
+    }
   } catch (e) {
     setStatus(`build failed: ${e.message}`, "err");
   }
+}
+
+// ---- registry download ----
+
+const RECENT_KEY = "autoimage.recentBuilds";
+
+function loadRecentBuilds() {
+  try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function saveRecentBuilds(list) {
+  localStorage.setItem(RECENT_KEY, JSON.stringify(list.slice(0, 10)));
+}
+
+function addRecentBuild(image, version, at) {
+  const list = loadRecentBuilds().filter((b) => !(b.image === image && b.version === version));
+  list.unshift({ image, version, at: at || new Date().toISOString() });
+  saveRecentBuilds(list);
+  renderRecentBuilds();
+}
+
+function renderRecentBuilds() {
+  const ul = $("#rd-list");
+  ul.innerHTML = "";
+  const list = loadRecentBuilds();
+  if (!list.length) {
+    ul.innerHTML = '<li><span class="muted">(no builds yet)</span></li>';
+    return;
+  }
+  for (const b of list) {
+    const li = document.createElement("li");
+    const a = document.createElement("a");
+    a.textContent = `${b.image}:${b.version}`;
+    a.href = "#";
+    a.onclick = (e) => {
+      e.preventDefault();
+      $("#rd-image").value = b.image;
+      $("#rd-version").value = b.version;
+    };
+    const meta = document.createElement("span");
+    const when = b.at ? new Date(b.at).toLocaleString() : "";
+    meta.textContent = when;
+    const dl = document.createElement("a");
+    dl.textContent = "download";
+    dl.href = `/api/registry/download?image=${encodeURIComponent(b.image)}&version=${encodeURIComponent(b.version)}`;
+    dl.download = `${b.image}_${b.version}.tar`;
+    li.appendChild(a);
+    li.appendChild(meta);
+    li.appendChild(dl);
+    ul.appendChild(li);
+  }
+}
+
+function setRdStatus(msg, kind) {
+  const el = $("#rd-status");
+  el.textContent = msg || "";
+  el.className = "status" + (kind ? " " + kind : "");
+}
+
+async function downloadBuiltImage() {
+  const image = $("#rd-image").value.trim();
+  const version = $("#rd-version").value.trim();
+  if (!image || !version) {
+    setRdStatus("image and version are required", "err");
+    return;
+  }
+  setRdStatus(`downloading ${image}:${version} from ghcr.io…`);
+  // record the attempt; the actual response is the tarball itself
+  addRecentBuild(image, version);
+  const url = `/api/registry/download?image=${encodeURIComponent(image)}&version=${encodeURIComponent(version)}`;
+  // Trigger a navigation-based download. The browser will follow the
+  // Content-Disposition: attachment header and save the file.
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${image}_${version}.tar`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setRdStatus("download started — check your browser's downloads", "ok");
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -130,6 +217,8 @@ window.addEventListener("DOMContentLoaded", () => {
   $("#info-btn").onclick = imageInfo;
   $("#dl-btn").onclick = imageDownload;
   $("#bf-build").onclick = triggerBuild;
+  $("#rd-btn").onclick = downloadBuiltImage;
   loadDockerfile();
   loadBackups();
+  renderRecentBuilds();
 });

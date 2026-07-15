@@ -15,7 +15,7 @@
         <pre id="info-out" class="out"></pre>
       </section>
       <section id="download">
-        <h2>Image download</h2>
+        <h2>Image download (proxy.vvvv.ee)</h2>
         <input id="dl-name" placeholder="alpine" />
         <button id="dl-btn">Download</button>
         <pre id="dl-out" class="out"></pre>
@@ -34,6 +34,18 @@
         <h3>Backups</h3>
         <ul id="bf-list"></ul>
         <pre id="bf-view" class="out hidden"></pre>
+      </section>
+      <section id="registry">
+        <h2>Built image download (ghcr.io)</h2>
+        <p class="muted">Pulls the image you just built from ghcr.io and gives you a <code>docker load -i &lt;file&gt;</code> tarball. Make sure the workflow has finished before downloading.</p>
+        <div class="row">
+          <input id="rd-image" placeholder="image" />
+          <input id="rd-version" placeholder="version" />
+          <button id="rd-btn">Download .tar</button>
+        </div>
+        <div id="rd-status" class="status"></div>
+        <h3>Recent builds (this browser)</h3>
+        <ul id="rd-list"></ul>
       </section>
     </main>
     <script src="/static/app.js" defer></script>
