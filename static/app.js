@@ -118,13 +118,13 @@ async function triggerBuild() {
   setStatus("triggering build...");
   try {
     const data = await call("POST", "/api/build", { image: image || undefined, version: version || undefined });
-    setStatus(`dispatched: ${data.workflow}`, "ok");
-    // remember the build so the user can download it from the registry section
-    if (image && version) {
-      addRecentBuild(image, version);
-      // also pre-fill the download form
-      $("#rd-image").value = image;
-      $("#rd-version").value = version;
+    setStatus(`dispatched: ${data.workflow} (${data.image}:${data.version})`, "ok");
+    // Always pre-fill + record the build using whatever the server actually used,
+    // so a bare "Trigger build" with empty form fields still works.
+    if (data.image && data.version) {
+      addRecentBuild(data.image, data.version);
+      $("#rd-image").value = data.image;
+      $("#rd-version").value = data.version;
     }
   } catch (e) {
     setStatus(`build failed: ${e.message}`, "err");

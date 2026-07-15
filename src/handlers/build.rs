@@ -18,6 +18,11 @@ pub struct BuildRequest {
 pub struct BuildResponse {
     pub accepted: bool,
     pub workflow: String,
+    /// The image name and version the server actually used (echoed back so
+    /// the client can pre-fill the download form regardless of whether
+    /// the caller supplied them).
+    pub image: String,
+    pub version: String,
 }
 
 pub async fn trigger_build(
@@ -84,6 +89,8 @@ async fn dispatch(state: &AppState, req: BuildRequest) -> Result<BuildResponse, 
         return Ok(BuildResponse {
             accepted: true,
             workflow: cfg.workflow_file.clone(),
+            image: image.clone(),
+            version: version.clone(),
         });
     }
     let text = resp.text().await.unwrap_or_default();
