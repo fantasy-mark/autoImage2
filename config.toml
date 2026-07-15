@@ -7,7 +7,7 @@ proxy_base_url = "https://proxy.vvvv.ee"
 [github]
 # Required. The repository that owns .github/workflows/build.yml.
 owner = "fantasy-mark"
-repo = "AutoImage"
+repo = "autoImage2"
 # Filename of the workflow to dispatch. Must accept `workflow_dispatch` with the
 # `repo`, `namespace`, `image`, `version` inputs.
 workflow_file = "build.yml"
