@@ -1,0 +1,33 @@
+[package]
+name = "autoimage"
+version = "0.1.0"
+edition = "2021"
+description = "Editor + dispatcher for building container images via GitHub Actions and ghcr.io"
+license = "MIT"
+
+[[bin]]
+name = "autoimage"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.7", features = ["macros"] }
+tokio = { version = "1", features = ["full"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["fs", "trace", "cors"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+chrono = { version = "0.4", features = ["serde"] }
+anyhow = "1"
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+regex = "1"
+async-trait = "0.1"
+once_cell = "1"
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

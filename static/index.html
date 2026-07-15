@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>autoimage</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header><h1>autoimage</h1></header>
+    <main>
+      <section id="info">
+        <h2>Image info</h2>
+        <input id="info-name" placeholder="alpine" />
+        <button id="info-btn">Lookup</button>
+        <pre id="info-out" class="out"></pre>
+      </section>
+      <section id="download">
+        <h2>Image download</h2>
+        <input id="dl-name" placeholder="alpine" />
+        <button id="dl-btn">Download</button>
+        <pre id="dl-out" class="out"></pre>
+      </section>
+      <section id="editor">
+        <h2>Dockerfile</h2>
+        <textarea id="df" spellcheck="false"></textarea>
+        <div class="row">
+          <button id="df-refresh">Refresh</button>
+          <button id="df-save">Save</button>
+          <input id="bf-image" placeholder="image" />
+          <input id="bf-version" placeholder="version" />
+          <button id="bf-build">Trigger build</button>
+        </div>
+        <div id="df-status" class="status"></div>
+        <h3>Backups</h3>
+        <ul id="bf-list"></ul>
+        <pre id="bf-view" class="out hidden"></pre>
+      </section>
+    </main>
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

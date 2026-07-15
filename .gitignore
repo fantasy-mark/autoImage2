@@ -1,0 +1,17 @@
+# Build output
+/target/
+/images
+
+# Editor backups
+/Dockerfile.bak.*
+
+# OS / editor cruft
+*.tar
+*.gz
+*.pyc
+*.idea
+.DS_Store
+
+# Local env files / secrets
+.env
+.env.local

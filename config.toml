@@ -1,0 +1,21 @@
+# autoimage — runtime configuration.
+# Sensitive values (especially GH_TOKEN) must come from the environment, not this file.
+
+bind = "0.0.0.0:8080"
+proxy_base_url = "https://proxy.vvvv.ee"
+
+[github]
+# Required. The repository that owns .github/workflows/build.yml.
+owner = "fantasy-mark"
+repo = "AutoImage"
+# Filename of the workflow to dispatch. Must accept `workflow_dispatch` with the
+# `repo`, `namespace`, `image`, `version` inputs.
+workflow_file = "build.yml"
+# default_branch is the `ref` used when dispatching the workflow.
+default_branch = "main"
+
+[target]
+# Where built images are pushed (default: ghcr.io).
+repo = "ghcr.io"
+# `namespace` defaults to `github.owner` when omitted.
+# namespace = "fantasy-mark"
