@@ -11,7 +11,7 @@ on:
       namespace:
         description: "Target registry namespace (image owner)"
         required: false
-        default: "${{ github.repository_owner }}"
+        default: ""
         type: string
       image:
         description: "Image name (e.g. nacos/nacos-server)"
