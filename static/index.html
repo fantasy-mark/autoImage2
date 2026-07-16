@@ -35,7 +35,7 @@
           <button id="df-refresh">Refresh</button>
           <button id="df-save">Save</button>
           <input id="bf-image" placeholder="image" />
-          <input id="bf-version" placeholder="version" />
+          <input id="bf-version" placeholder="latest" />
           <button id="bf-build">Trigger build</button>
         </div>
         <div id="df-status" class="status"></div>
@@ -48,7 +48,7 @@
         <p class="muted">Pulls the image you just built from ghcr.io and gives you a <code>docker load -i &lt;file&gt;</code> tarball. Make sure the workflow has finished before downloading.</p>
         <div class="row">
           <input id="rd-image" placeholder="image" />
-          <input id="rd-version" placeholder="version" />
+          <input id="rd-version" placeholder="latest" />
           <select id="rd-platform" title="architecture">
             <option value="linux/amd64">linux/amd64</option>
             <option value="linux/arm64">linux/arm64</option>

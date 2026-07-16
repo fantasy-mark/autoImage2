@@ -211,20 +211,13 @@ async function triggerBuild() {
 
   // Step 1: save the current editor content to disk (so the commit below has
   // something fresh to record and the workflow's checkout sees the latest edits).
-  setStatus("saving Dockerfile…");
-  const saveOk = await saveDockerfile({ silent: true });
-  if (!saveOk) {
-    setStatus("save failed — not triggering build", "err");
-    return;
-  }
-
   // Step 2: commit + push the saved Dockerfile so the workflow (which checks
   // out a commit, not the working tree) sees the latest version.
   setStatus("committing + pushing…");
   let commit;
   try {
     commit = await call("POST", "/api/git/commit", {
-      message: `autoimage: update Dockerfile (${image || "?"}:${version || "?"})`,
+      message: `autoimage: update Dockerfile (${image || "?"}:${effectiveVersion()})`,
     });
   } catch (e) {
     setStatus(`commit/push failed — not triggering build: ${e.message}`, "err");
@@ -268,6 +261,8 @@ const MIRROR_INPUTS = [
   { id: "rd-version", field: "version" },
 ];
 const _values = { image: "", version: "" };
+// `version` defaults to "latest" when the user leaves the field blank.
+const VERSION_DEFAULT = "latest";
 
 function setAllInputs(field, value) {
   _values[field] = value;
@@ -283,6 +278,11 @@ function onMirrorInput(field, ev) {
   setAllInputs(field, ev.target.value);
 }
 
+/** Effective version: the user-typed value, or "latest" when blank. */
+function effectiveVersion() {
+  return (_values.version || "").trim() || VERSION_DEFAULT;
+}
+
 // namespace + proxy host, populated from /api/build responses. Used to
 // assemble the `podman pull` helper at the bottom of the section.
 let _namespace = "fantasy-mark";
@@ -290,8 +290,8 @@ let _proxyHost = "proxy.vvvv.ee";
 
 function updatePullCommand() {
   const platform = ($("#rd-platform") || {}).value || "linux/amd64";
-  const image = _values.image || ($("#rd-image") || {}).value.trim() || "<image>";
-  const version = _values.version || ($("#rd-version") || {}).value.trim() || "<version>";
+  const image = (_values.image || "").trim() || "<image>";
+  const version = effectiveVersion();
   const cmd = `podman pull --platform ${platform} ${_proxyHost}/ghcr.io/${_namespace}/${image}:${version}`;
   const el = $("#rd-pull");
   if (el) el.textContent = cmd;
@@ -371,10 +371,10 @@ function setRdStatus(msg, kind) {
 }
 
 async function downloadBuiltImage() {
-  const image = $("#rd-image").value.trim();
-  const version = $("#rd-version").value.trim();
-  if (!image || !version) {
-    setRdStatus("image and version are required", "err");
+  const image = (_values.image || "").trim();
+  const version = effectiveVersion();
+  if (!image) {
+    setRdStatus("image is required", "err");
     return;
   }
   setRdStatus(`downloading ${image}:${version} from ghcr.io…`);
