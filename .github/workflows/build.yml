@@ -40,10 +40,21 @@ jobs:
       - name: Resolve build inputs
         id: inputs
         run: |
-          echo "repo=${{ inputs.repo || 'ghcr.io' }}" >> "$GITHUB_OUTPUT"
-          echo "namespace=${{ inputs.namespace || github.repository_owner }}" >> "$GITHUB_OUTPUT"
-          echo "image=${{ inputs.image }}" >> "$GITHUB_OUTPUT"
-          echo "version=${{ inputs.version || 'latest' }}" >> "$GITHUB_OUTPUT"
+          # For workflow_dispatch we honour the caller's inputs (with defaults);
+          # for any other trigger (push, schedule, …) `inputs.*` is undefined and
+          # would produce empty values that break `docker buildx --tag`. Fall
+          # back to a reasonable derived image name + the commit SHA.
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "repo=${{ inputs.repo || 'ghcr.io' }}" >> "$GITHUB_OUTPUT"
+            echo "namespace=${{ inputs.namespace || github.repository_owner }}" >> "$GITHUB_OUTPUT"
+            echo "image=${{ inputs.image }}" >> "$GITHUB_OUTPUT"
+            echo "version=${{ inputs.version || 'latest' }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "repo=ghcr.io" >> "$GITHUB_OUTPUT"
+            echo "namespace=${{ github.repository_owner }}" >> "$GITHUB_OUTPUT"
+            echo "image=${{ github.event.repository.name }}" >> "$GITHUB_OUTPUT"
+            echo "version=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
