@@ -49,9 +49,23 @@
         <div class="row">
           <input id="rd-image" placeholder="image" />
           <input id="rd-version" placeholder="version" />
+          <select id="rd-platform" title="architecture">
+            <option value="linux/amd64">linux/amd64</option>
+            <option value="linux/arm64">linux/arm64</option>
+            <option value="linux/arm/v7">linux/arm/v7</option>
+            <option value="linux/386">linux/386</option>
+            <option value="linux/ppc64le">linux/ppc64le</option>
+            <option value="linux/s390x">linux/s390x</option>
+          </select>
           <button id="rd-btn">Download .tar</button>
         </div>
         <div id="rd-status" class="status"></div>
+        <h3>Pull command (copy to use elsewhere)</h3>
+        <p class="muted">Run this on the target host (e.g. <code>10.175.94.214</code>) to pull the image via the corporate proxy.</p>
+        <div class="row">
+          <code id="rd-pull" class="pull-cmd">podman pull --platform linux/amd64 proxy.vvvv.ee/ghcr.io/&lt;owner&gt;/&lt;image&gt;:&lt;version&gt;</code>
+          <button id="rd-copy" type="button">Copy</button>
+        </div>
         <h3>Recent builds (this browser)</h3>
         <ul id="rd-list"></ul>
       </section>

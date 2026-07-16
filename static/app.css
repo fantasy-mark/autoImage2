@@ -25,4 +25,17 @@ ul#bv-list .bv-name { font-family: ui-monospace, Menlo, Consolas, monospace; min
 ul#bv-list .bv-default { color: #888; font-size: 0.85rem; }
 ul#bv-list input.bv-value { flex: 1; min-width: 12rem; }
 .muted { color: #888; font-size: 0.9rem; }
+code.pull-cmd {
+  display: block;
+  flex: 1;
+  min-width: 12rem;
+  padding: 0.4rem 0.6rem;
+  background: #f6f8fa;
+  border: 1px solid #d0d7de;
+  border-radius: 4px;
+  font: 12px/1.4 ui-monospace, Menlo, Consolas, monospace;
+  color: #1f2328;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
 .hidden { display: none; }

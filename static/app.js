@@ -246,6 +246,10 @@ async function triggerBuild() {
       $("#rd-image").value = data.image;
       $("#rd-version").value = data.version;
     }
+    // capture namespace + proxy host for the pull command helper
+    if (data.namespace) _namespace = data.namespace;
+    if (data.proxy_host) _proxyHost = data.proxy_host;
+    updatePullCommand();
   } catch (e) {
     setStatus(`build failed: ${e.message}`, "err");
   }
@@ -254,6 +258,39 @@ async function triggerBuild() {
 // ---- registry download ----
 
 const RECENT_KEY = "autoimage.recentBuilds";
+
+// namespace + proxy host, populated from /api/build responses. Used to
+// assemble the `podman pull` helper at the bottom of the section.
+let _namespace = "fantasy-mark";
+let _proxyHost = "proxy.vvvv.ee";
+
+function updatePullCommand() {
+  const platform = ($("#rd-platform") || {}).value || "linux/amd64";
+  const image = ($("#rd-image") || {}).value.trim() || "<image>";
+  const version = ($("#rd-version") || {}).value.trim() || "<version>";
+  const cmd = `podman pull --platform ${platform} ${_proxyHost}/ghcr.io/${_namespace}/${image}:${version}`;
+  const el = $("#rd-pull");
+  if (el) el.textContent = cmd;
+}
+
+async function copyPullCommand() {
+  const text = ($("#rd-pull") || {}).textContent || "";
+  try {
+    await navigator.clipboard.writeText(text);
+    setRdStatus("pull command copied to clipboard", "ok");
+  } catch (e) {
+    // fallback: select the text
+    const el = $("#rd-pull");
+    if (el) {
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(r);
+      setRdStatus("press Ctrl/Cmd+C to copy", "");
+    }
+  }
+}
 
 function loadRecentBuilds() {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]"); }
@@ -329,6 +366,7 @@ async function downloadBuiltImage() {
   a.click();
   a.remove();
   setRdStatus("download started — check your browser's downloads", "ok");
+  updatePullCommand();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -338,6 +376,7 @@ window.addEventListener("DOMContentLoaded", () => {
   $("#dl-btn").onclick = imageDownload;
   $("#bf-build").onclick = triggerBuild;
   $("#rd-btn").onclick = downloadBuiltImage;
+  $("#rd-copy").onclick = copyPullCommand;
   // re-scan the editor for ${VAR} placeholders on every change
   $("#df").addEventListener("input", scanAndRenderVariables);
   $("#bv-defaults").onclick = () => {
@@ -346,7 +385,14 @@ window.addEventListener("DOMContentLoaded", () => {
       inp.value = inp.placeholder && inp.placeholder !== "(no default)" ? inp.placeholder : "";
     });
   };
+  // re-render pull command whenever the user types or changes platform
+  ["#rd-image", "#rd-version", "#rd-platform"].forEach((sel) => {
+    const el = $(sel);
+    if (el) el.addEventListener("input", updatePullCommand);
+    if (el && sel === "#rd-platform") el.addEventListener("change", updatePullCommand);
+  });
   loadDockerfile();
   loadBackups();
   renderRecentBuilds();
+  updatePullCommand();
 });

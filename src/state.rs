@@ -76,7 +76,7 @@ impl AppState {
     }
 }
 
-fn url_host(s: &str) -> Option<String> {
+pub(crate) fn url_host(s: &str) -> Option<String> {
     // minimal URL → host extraction, no URL crate needed
     let rest = s.trim().trim_start_matches("http://").trim_start_matches("https://");
     let host_end = rest.find('/').unwrap_or(rest.len());

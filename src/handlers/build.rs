@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 use crate::error::ApiError;
-use crate::state::AppState;
+use crate::state::{url_host, AppState};
 
 #[derive(Debug, Deserialize)]
 pub struct BuildRequest {
@@ -23,6 +23,12 @@ pub struct BuildResponse {
     /// the caller supplied them).
     pub image: String,
     pub version: String,
+    /// Image namespace (owner on ghcr.io), for the frontend to assemble
+    /// the `podman pull` command.
+    pub namespace: String,
+    /// Host part of `proxy_base_url` (e.g. `proxy.vvvv.ee`), for the
+    /// frontend to assemble the `podman pull` command via the proxy.
+    pub proxy_host: String,
 }
 
 pub async fn trigger_build(
@@ -91,6 +97,8 @@ async fn dispatch(state: &AppState, req: BuildRequest) -> Result<BuildResponse, 
             workflow: cfg.workflow_file.clone(),
             image: image.clone(),
             version: version.clone(),
+            namespace: state.config.namespace().to_string(),
+            proxy_host: url_host(&state.config.proxy_base_url).unwrap_or_default(),
         });
     }
     let text = resp.text().await.unwrap_or_default();
