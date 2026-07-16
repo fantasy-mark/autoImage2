@@ -126,20 +126,23 @@ function scanAndRenderVariables() {
   renderVariables(vars);
 }
 
-async function saveDockerfile() {
+async function saveDockerfile(opts) {
+  const silent = opts && opts.silent;
   const raw = $("#df").value;
   const values = getVariableValues();
   const content = substituteVariables(raw, values);
-  setStatus("saving...");
+  if (!silent) setStatus("saving...");
   try {
     const data = await call("PUT", "/api/dockerfile", { content });
     const subNote = values && Object.keys(values).some((k) => values[k])
       ? ` (substituted ${Object.keys(values).filter((k) => values[k]).length} variable${Object.keys(values).filter((k) => values[k]).length === 1 ? "" : "s"})`
       : "";
-    setStatus(`saved (${data.size} bytes, backup ${data.backup})${subNote}`, "ok");
+    if (!silent) setStatus(`saved (${data.size} bytes, backup ${data.backup})${subNote}`, "ok");
     await loadBackups();
+    return true;
   } catch (e) {
-    setStatus(`save failed: ${e.message}`, "err");
+    if (!silent) setStatus(`save failed: ${e.message}`, "err");
+    return false;
   }
 }
 
@@ -205,12 +208,39 @@ async function imageDownload() {
 async function triggerBuild() {
   const image = $("#bf-image").value.trim();
   const version = $("#bf-version").value.trim();
-  setStatus("triggering build...");
+
+  // Step 1: save the current editor content to disk (so the commit below has
+  // something fresh to record and the workflow's checkout sees the latest edits).
+  setStatus("saving Dockerfile…");
+  const saveOk = await saveDockerfile({ silent: true });
+  if (!saveOk) {
+    setStatus("save failed — not triggering build", "err");
+    return;
+  }
+
+  // Step 2: commit + push the saved Dockerfile so the workflow (which checks
+  // out a commit, not the working tree) sees the latest version.
+  setStatus("committing + pushing…");
+  let commit;
+  try {
+    commit = await call("POST", "/api/git/commit", {
+      message: `autoimage: update Dockerfile (${image || "?"}:${version || "?"})`,
+    });
+  } catch (e) {
+    setStatus(`commit/push failed — not triggering build: ${e.message}`, "err");
+    return;
+  }
+  if (commit.committed) {
+    setStatus(`pushed ${commit.sha.slice(0, 7)} → ${commit.branch}`, "ok");
+  } else {
+    setStatus("no Dockerfile changes — using last committed version", "");
+  }
+
+  // Step 3: dispatch the workflow.
+  setStatus("triggering build…");
   try {
     const data = await call("POST", "/api/build", { image: image || undefined, version: version || undefined });
-    setStatus(`dispatched: ${data.workflow} (${data.image}:${data.version})`, "ok");
-    // Always pre-fill + record the build using whatever the server actually used,
-    // so a bare "Trigger build" with empty form fields still works.
+    setStatus(`dispatched: ${data.workflow} (${data.image}:${data.version})${commit.committed ? " on " + commit.sha.slice(0, 7) : ""}`, "ok");
     if (data.image && data.version) {
       addRecentBuild(data.image, data.version);
       $("#rd-image").value = data.image;
