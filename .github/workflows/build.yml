@@ -22,10 +22,9 @@ on:
         required: false
         default: "latest"
         type: string
-  push:
-    branches: [ main ]
-    paths:
-      - "Dockerfile"
+  # Intentionally no `push:` trigger: the autoimage UI already saves, commits
+  # and pushes the Dockerfile, then dispatches this workflow. Adding a push
+  # trigger on top of that produces two runs per Trigger build.
 
 permissions:
   contents: read
