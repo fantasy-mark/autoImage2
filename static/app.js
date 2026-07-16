@@ -243,8 +243,8 @@ async function triggerBuild() {
     setStatus(`dispatched: ${data.workflow} (${data.image}:${data.version})${commit.committed ? " on " + commit.sha.slice(0, 7) : ""}`, "ok");
     if (data.image && data.version) {
       addRecentBuild(data.image, data.version);
-      $("#rd-image").value = data.image;
-      $("#rd-version").value = data.version;
+      setAllInputs("image", data.image);
+      setAllInputs("version", data.version);
     }
     // capture namespace + proxy host for the pull command helper
     if (data.namespace) _namespace = data.namespace;
@@ -259,6 +259,30 @@ async function triggerBuild() {
 
 const RECENT_KEY = "autoimage.recentBuilds";
 
+// All four image/version inputs (#bf-image, #bf-version, #rd-image,
+// #rd-version) are kept in sync so the user only types a value once.
+const MIRROR_INPUTS = [
+  { id: "bf-image",   field: "image" },
+  { id: "bf-version", field: "version" },
+  { id: "rd-image",   field: "image" },
+  { id: "rd-version", field: "version" },
+];
+const _values = { image: "", version: "" };
+
+function setAllInputs(field, value) {
+  _values[field] = value;
+  for (const m of MIRROR_INPUTS) {
+    if (m.field !== field) continue;
+    const el = document.getElementById(m.id);
+    if (el && el.value !== value) el.value = value;
+  }
+  updatePullCommand();
+}
+
+function onMirrorInput(field, ev) {
+  setAllInputs(field, ev.target.value);
+}
+
 // namespace + proxy host, populated from /api/build responses. Used to
 // assemble the `podman pull` helper at the bottom of the section.
 let _namespace = "fantasy-mark";
@@ -266,8 +290,8 @@ let _proxyHost = "proxy.vvvv.ee";
 
 function updatePullCommand() {
   const platform = ($("#rd-platform") || {}).value || "linux/amd64";
-  const image = ($("#rd-image") || {}).value.trim() || "<image>";
-  const version = ($("#rd-version") || {}).value.trim() || "<version>";
+  const image = _values.image || ($("#rd-image") || {}).value.trim() || "<image>";
+  const version = _values.version || ($("#rd-version") || {}).value.trim() || "<version>";
   const cmd = `podman pull --platform ${platform} ${_proxyHost}/ghcr.io/${_namespace}/${image}:${version}`;
   const el = $("#rd-pull");
   if (el) el.textContent = cmd;
@@ -323,8 +347,8 @@ function renderRecentBuilds() {
     a.href = "#";
     a.onclick = (e) => {
       e.preventDefault();
-      $("#rd-image").value = b.image;
-      $("#rd-version").value = b.version;
+      setAllInputs("image", b.image);
+      setAllInputs("version", b.version);
     };
     const meta = document.createElement("span");
     const when = b.at ? new Date(b.at).toLocaleString() : "";
@@ -366,7 +390,6 @@ async function downloadBuiltImage() {
   a.click();
   a.remove();
   setRdStatus("download started — check your browser's downloads", "ok");
-  updatePullCommand();
 }
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -391,6 +414,15 @@ window.addEventListener("DOMContentLoaded", () => {
     if (el) el.addEventListener("input", updatePullCommand);
     if (el && sel === "#rd-platform") el.addEventListener("change", updatePullCommand);
   });
+  // keep all four image/version inputs in sync — editing any one mirrors the
+  // value to the other three and refreshes the pull command.
+  MIRROR_INPUTS.forEach((m) => {
+    const el = document.getElementById(m.id);
+    if (el) el.addEventListener("input", (ev) => onMirrorInput(m.field, ev));
+  });
+  // seed shared state from any pre-filled values (e.g. from localStorage)
+  setAllInputs("image", ($("#bf-image") || {}).value || "");
+  setAllInputs("version", ($("#bf-version") || {}).value || "");
   loadDockerfile();
   loadBackups();
   renderRecentBuilds();
