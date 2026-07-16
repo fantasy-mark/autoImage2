@@ -31,6 +31,7 @@ async function loadDockerfile() {
     const data = await call("GET", "/api/dockerfile");
     $("#df").value = data.content;
     setStatus(`loaded (${data.size} bytes, updated ${data.updated_at})`, "ok");
+    scanAndRenderVariables();
   } catch (e) {
     if (e.status === 404) {
       $("#df").value = "";
@@ -41,12 +42,101 @@ async function loadDockerfile() {
   }
 }
 
+// ---- build variable scanning + substitution ----
+
+// Match ${VAR} or ${VAR:-default}. Skips escaped \${ ... }.
+const VAR_RE = /\$\{([A-Za-z_][A-Za-z0-9_]*)(?::-([^}]*))?\}/g;
+
+function scanVariables(content) {
+  const out = new Map(); // name -> { name, default }
+  if (!content) return [];
+  let m;
+  // Reset regex state
+  VAR_RE.lastIndex = 0;
+  while ((m = VAR_RE.exec(content)) !== null) {
+    const name = m[1];
+    const def = m[2] !== undefined ? m[2] : null;
+    // Preserve the first-seen default (or null if no `:-` was given)
+    if (!out.has(name)) out.set(name, { name, default: def });
+  }
+  return Array.from(out.values());
+}
+
+function getVariableValues() {
+  // Read the current input values for each variable row.
+  const out = {};
+  $$("#bv-list input.bv-value").forEach((inp) => {
+    out[inp.dataset.name] = inp.value;
+  });
+  return out;
+}
+
+function substituteVariables(content, values) {
+  // Replace ${VAR} / ${VAR:-default} with the provided value.
+  // - if user provided a non-empty value, use it
+  // - else if there's a default, use the default
+  // - else leave as `${VAR}` so Docker fails loudly (matches behaviour of
+  //   `docker build` without `--build-arg VAR=...`).
+  return content.replace(VAR_RE, (full, name, def) => {
+    const v = values && Object.prototype.hasOwnProperty.call(values, name) ? values[name] : "";
+    if (v !== "" && v !== null && v !== undefined) return v;
+    if (def !== undefined) return def;
+    return full;
+  });
+}
+
+function renderVariables(vars) {
+  const wrap = $("#bv-wrap");
+  const list = $("#bv-list");
+  // capture current values + placeholder defaults before wiping the DOM
+  const prev = new Map();
+  $$("#bv-list input.bv-value").forEach((inp) => {
+    prev.set(inp.dataset.name, { value: inp.value, default: inp.dataset.def || "" });
+  });
+  list.innerHTML = "";
+  if (!vars.length) {
+    wrap.classList.add("hidden");
+    return;
+  }
+  wrap.classList.remove("hidden");
+  for (const v of vars) {
+    const li = document.createElement("li");
+    const name = document.createElement("span");
+    name.className = "bv-name";
+    name.textContent = "${" + v.name + "}";
+    const input = document.createElement("input");
+    input.className = "bv-value";
+    input.placeholder = v.default !== null ? v.default : "(no default)";
+    input.dataset.name = v.name;
+    input.dataset.def = v.default !== null ? v.default : "";
+    // restore a previously-entered value if the variable name still exists
+    if (prev.has(v.name)) input.value = prev.get(v.name).value;
+    const def = document.createElement("span");
+    def.className = "bv-default";
+    if (v.default !== null) def.textContent = "default: " + v.default;
+    li.appendChild(name);
+    li.appendChild(input);
+    li.appendChild(def);
+    list.appendChild(li);
+  }
+}
+
+function scanAndRenderVariables() {
+  const vars = scanVariables($("#df").value);
+  renderVariables(vars);
+}
+
 async function saveDockerfile() {
-  const content = $("#df").value;
+  const raw = $("#df").value;
+  const values = getVariableValues();
+  const content = substituteVariables(raw, values);
   setStatus("saving...");
   try {
     const data = await call("PUT", "/api/dockerfile", { content });
-    setStatus(`saved (${data.size} bytes, backup ${data.backup})`, "ok");
+    const subNote = values && Object.keys(values).some((k) => values[k])
+      ? ` (substituted ${Object.keys(values).filter((k) => values[k]).length} variable${Object.keys(values).filter((k) => values[k]).length === 1 ? "" : "s"})`
+      : "";
+    setStatus(`saved (${data.size} bytes, backup ${data.backup})${subNote}`, "ok");
     await loadBackups();
   } catch (e) {
     setStatus(`save failed: ${e.message}`, "err");
@@ -218,6 +308,14 @@ window.addEventListener("DOMContentLoaded", () => {
   $("#dl-btn").onclick = imageDownload;
   $("#bf-build").onclick = triggerBuild;
   $("#rd-btn").onclick = downloadBuiltImage;
+  // re-scan the editor for ${VAR} placeholders on every change
+  $("#df").addEventListener("input", scanAndRenderVariables);
+  $("#bv-defaults").onclick = () => {
+    // fill every visible input with its default and clear if no default
+    $$("#bv-list input.bv-value").forEach((inp) => {
+      inp.value = inp.placeholder && inp.placeholder !== "(no default)" ? inp.placeholder : "";
+    });
+  };
   loadDockerfile();
   loadBackups();
   renderRecentBuilds();

@@ -19,4 +19,10 @@ ul#bf-list { list-style: none; padding: 0; margin: 0.4rem 0; max-height: 160px; 
 ul#bf-list li { padding: 0.3rem 0.6rem; border-bottom: 1px solid #f0f0f0; display: flex; justify-content: space-between; }
 ul#bf-list li:last-child { border-bottom: 0; }
 ul#bf-list a { color: #0969da; cursor: pointer; }
+ul#bv-list { list-style: none; padding: 0; margin: 0.4rem 0; }
+ul#bv-list li { display: flex; gap: 0.5rem; align-items: center; margin: 0.25rem 0; }
+ul#bv-list .bv-name { font-family: ui-monospace, Menlo, Consolas, monospace; min-width: 11rem; color: #444; }
+ul#bv-list .bv-default { color: #888; font-size: 0.85rem; }
+ul#bv-list input.bv-value { flex: 1; min-width: 12rem; }
+.muted { color: #888; font-size: 0.9rem; }
 .hidden { display: none; }

@@ -23,6 +23,14 @@
       <section id="editor">
         <h2>Dockerfile</h2>
         <textarea id="df" spellcheck="false"></textarea>
+        <div id="bv-wrap" class="hidden">
+          <h3>Build variables</h3>
+          <p class="muted">Pasted Dockerfile references <code>${VAR}</code> or <code>${VAR:-default}</code>. Fill in the values to bake into the saved file; leave blank to use the default.</p>
+          <ul id="bv-list"></ul>
+          <div class="row">
+            <button id="bv-defaults" type="button">Use defaults for all</button>
+          </div>
+        </div>
         <div class="row">
           <button id="df-refresh">Refresh</button>
           <button id="df-save">Save</button>
