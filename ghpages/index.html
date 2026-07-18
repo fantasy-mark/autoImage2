@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>autoimage — Pages edition</title>
+    <link rel="stylesheet" href="app.css" />
+  </head>
+  <body>
+    <header>
+      <h1>autoimage <span class="muted">/ Pages edition</span></h1>
+      <p id="auth-warning" class="banner hidden">
+        Your GitHub PAT is stored unencrypted in this browser's localStorage. Anyone with DevTools access can read it. Do not share this URL with untrusted people.
+      </p>
+    </header>
+    <main id="app" class="hidden">
+      <!-- config (token / owner / repo) -->
+      <section id="config">
+        <h2>GitHub access</h2>
+        <p>
+          Target repository:
+          <input id="cfg-owner" placeholder="owner" />
+          <code>/</code>
+          <input id="cfg-repo" placeholder="repo" />
+          &nbsp;
+          <button id="cfg-token-toggle" type="button">Change token…</button>
+        </p>
+        <div id="token-form" class="hidden">
+          <input id="cfg-token" type="password" placeholder="github_pat_…" />
+          <button id="cfg-save">Save</button>
+          <span id="cfg-save-msg" class="muted"></span>
+        </div>
+        <p class="muted">
+          Token needs <code>contents:write</code>, <code>actions:write</code>, and (for dispatch) <code>workflows</code> on the target repo.
+          Pull <code>proxy.vvvv.ee</code> is just a reference link — see below.
+        </p>
+      </section>
+
+      <!-- Dockerfile editor -->
+      <section id="editor">
+        <h2>Dockerfile</h2>
+        <textarea id="df" spellcheck="false" placeholder="# Dockerfile editor (loads from GitHub Contents API on save)"></textarea>
+        <div class="row">
+          <button id="df-refresh">Refresh</button>
+          <button id="df-save">Save</button>
+          <span id="df-status" class="status"></span>
+        </div>
+        <h3>Build variables</h3>
+        <p class="muted">Detected <code>${VAR}</code> / <code>${VAR:-default}</code> references. Fill values to substitute into the saved file; leave blank to use the default.</p>
+        <ul id="bv-list"></ul>
+        <div class="row"><button id="bv-defaults" type="button">Use defaults for all</button></div>
+      </section>
+
+      <!-- Build trigger -->
+      <section id="build">
+        <h2>Build</h2>
+        <div class="row">
+          <input id="bf-image" placeholder="image (required)" />
+          <input id="bf-version" placeholder="latest" />
+          <select id="bf-platform" title="architecture">
+            <option value="linux/amd64">linux/amd64</option>
+            <option value="linux/arm64">linux/arm64</option>
+            <option value="linux/arm/v7">linux/arm/v7</option>
+            <option value="linux/386">linux/386</option>
+            <option value="linux/ppc64le">linux/ppc64le</option>
+            <option value="linux/s390x">linux/s390x</option>
+          </select>
+          <button id="bf-build">Trigger build</button>
+        </div>
+        <div id="bf-status" class="status"></div>
+      </section>
+
+      <!-- Pull command -->
+      <section id="pull">
+        <h2>Pull command</h2>
+        <p class="muted">
+          Run this on the target host (e.g. <code>10.175.94.214</code>) to pull the image.
+          Mirror: <a href="https://proxy.vvvv.ee/" target="_blank" rel="noopener noreferrer">proxy.vvvv.ee</a>
+        </p>
+        <div class="row">
+          <code id="pull-cmd" class="pull-cmd">podman pull --platform linux/amd64 proxy.vvvv.ee/ghcr.io/&lt;owner&gt;/&lt;image&gt;:&lt;version&gt;</code>
+          <button id="pull-copy" type="button">Copy</button>
+        </div>
+      </section>
+
+      <!-- History -->
+      <section id="history">
+        <h2>Recent Dockerfile commits</h2>
+        <div class="row">
+          <button id="hi-refresh">Refresh</button>
+          <span id="hi-status" class="status"></span>
+        </div>
+        <ul id="hi-list"></ul>
+        <h3>Diff (selected revision vs current editor)</h3>
+        <pre id="hi-diff" class="out hidden"></pre>
+      </section>
+    </main>
+
+    <!-- Token gate (shown until a token is saved) -->
+    <main id="gate">
+      <section>
+        <h2>Welcome</h2>
+        <p>This is the <strong>GitHub Pages edition</strong> of <code>autoimage</code> — a thin client that talks to <code>api.github.com</code> and <code>ghcr.io</code> from your browser using your personal access token.</p>
+        <p>To begin, paste a GitHub PAT with <code>contents:write</code>, <code>actions:write</code>, and <code>workflows</code> scopes on the target repo:</p>
+        <input id="gate-token" type="password" placeholder="github_pat_…" />
+        <input id="gate-owner" placeholder="owner (e.g. fantasy-mark)" />
+        <input id="gate-repo" placeholder="repo (e.g. autoImage2)" />
+        <button id="gate-save">Get started</button>
+        <div id="gate-err" class="status err hidden"></div>
+        <p class="muted">Read the warning banner at the top of the page about PAT visibility before saving.</p>
+      </section>
+    </main>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
