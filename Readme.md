@@ -113,4 +113,6 @@ docker run --rm -p 8080:8080 \
 | POST   | `/api/image/info`                     | Proxy `proxy.vvvv.ee/api/image/info`     |
 | POST   | `/api/image/download`                 | Proxy `proxy.vvvv.ee/api/image/download` |
 | POST   | `/api/build`                          | Trigger GitHub Actions workflow          |
-# autoImage2
+# [PAT](https://github.com/settings/personal-access-tokens)
+
+![PAT](./PAT.png)
